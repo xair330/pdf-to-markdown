@@ -1,0 +1,40 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Distribution / packaging
+dist/
+build/
+*.egg-info/
+.eggs/
+
+# Virtual Environments
+.venv/
+venv/
+ENV/
+env/
+
+# IDE / Editor
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS generated
+.DS_Store
+Thumbs.db
+ehthumbs.db
+
+# Database / SQLite
+*.sqlite
+*.sqlite3
+*.db
+*.db-wal
+*.db-shm
+
+# Temp / Cache
+.cache/
+.tmp/
+tmp/
+scratch/
