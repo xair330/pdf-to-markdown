@@ -56,6 +56,56 @@ def clean_page_text(raw_text: str, watermark_res: list) -> str:
     return joined
 
 
+def extract_page_markdown(
+    page: "fitz.Page",
+    watermark_res: list,
+    extract_tables: bool = True
+) -> str:
+    """
+    Extract page content formatted for pre-trained Markdown LLM comprehension.
+    Detects 2D tables and formats them as standard GitHub Flavored Markdown tables
+    (| Col | Col |), seamlessly interleaved with regular text blocks by vertical geometry.
+    """
+    tables = []
+    if extract_tables and hasattr(page, "find_tables"):
+        try:
+            tabs = page.find_tables()
+            tables = list(tabs.tables) if tabs else []
+        except Exception:
+            tables = []
+
+    if not tables:
+        raw_text = page.get_text("text")
+        return clean_page_text(raw_text, watermark_res)
+
+    items = []
+    for tab in tables:
+        t_md = tab.to_markdown().strip()
+        if t_md:
+            items.append(("table", tab.bbox[1], t_md))
+
+    blocks = page.get_text("blocks")
+    for b in blocks:
+        b_rect = fitz.Rect(b[:4])
+        if b_rect.is_empty:
+            continue
+        overlap = False
+        b_area = max(1.0, b_rect.get_area())
+        for tab in tables:
+            t_rect = fitz.Rect(tab.bbox)
+            intersect = b_rect & t_rect
+            if not intersect.is_empty and (intersect.get_area() / b_area) > 0.4:
+                overlap = True
+                break
+        if not overlap:
+            cleaned_b = clean_page_text(b[4], watermark_res)
+            if cleaned_b:
+                items.append(("text", b[1], cleaned_b))
+
+    items.sort(key=lambda x: x[1])
+    return "\n\n".join(x[2] for x in items).strip()
+
+
 def build_adaptive_chapters(
     toc: list,
     total_pages: int,
@@ -212,6 +262,7 @@ def convert_pdf_to_markdown(
     max_chapter_pages: int = 400,
     default_chunk_size: int = 100,
     single_file: bool = False,
+    extract_tables: bool = True,
     page_cache_writer = None,
 ) -> dict:
     """
@@ -262,7 +313,7 @@ def convert_pdf_to_markdown(
         non_empty = 0
         total_chars = 0
         for pno in range(1, total_pages + 1):
-            txt = clean_page_text(doc[pno - 1].get_text("text"), watermark_res)
+            txt = extract_page_markdown(doc[pno - 1], watermark_res, extract_tables=extract_tables)
             if txt:
                 non_empty += 1
                 total_chars += len(txt)
@@ -336,7 +387,7 @@ def convert_pdf_to_markdown(
 
         ch_chars = 0
         for pno in range(sp, ep + 1):
-            txt = clean_page_text(doc[pno - 1].get_text("text"), watermark_res)
+            txt = extract_page_markdown(doc[pno - 1], watermark_res, extract_tables=extract_tables)
             if txt:
                 non_empty_pages += 1
                 ch_chars += len(txt)
@@ -456,6 +507,7 @@ def _worker_convert_task(task_kwargs):
             max_chapter_pages=task_kwargs.get("max_chapter_pages", 400),
             default_chunk_size=task_kwargs.get("default_chunk_size", 100),
             single_file=task_kwargs.get("single_file", False),
+            extract_tables=task_kwargs.get("extract_tables", True),
             page_cache_writer=cache_writer,
         )
         res["cache_jsonl"] = cache_jsonl
@@ -472,6 +524,7 @@ def batch_convert_pdf_directory(
     build_fts5: bool = False,
     max_chapter_pages: int = 400,
     custom_watermarks: list = None,
+    extract_tables: bool = True,
 ) -> dict:
     """
     Batch convert all PDF files in a directory to Markdown with multi-processing.
@@ -504,6 +557,7 @@ def batch_convert_pdf_directory(
             "output_dir": output_dir,
             "custom_watermarks": custom_watermarks,
             "max_chapter_pages": max_chapter_pages,
+            "extract_tables": extract_tables,
             "cache_jsonl": c_jsonl,
         })
 

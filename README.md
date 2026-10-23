@@ -1,17 +1,19 @@
 # pdf-to-markdown
 
-[![PyPI version](https://img.shields.io/badge/pypi-v1.0.0-blue.svg)](https://pypi.org/)
+[![PyPI version](https://img.shields.io/badge/pypi-v1.1.0-blue.svg)](https://pypi.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
 [![Python: 3.9+](https://img.shields.io/badge/python-3.9+-brightgreen.svg)](https://www.python.org/)
 
-**High-performance PDF to structured Markdown converter** with adaptive TOC bookmark partitioning, physical page anchors, watermark scrubbing, and SQLite FTS5 full-text indexing.
+**High-performance PDF to structured Markdown converter** with adaptive TOC bookmark partitioning, physical page anchors, pre-trained 2D table alignment, watermark scrubbing, and SQLite FTS5 full-text indexing.
 
-高性能 PDF 结构化转 Markdown 工具：专为超长技术手册、规范标准、规程文档及大模型 RAG 数据清洗设计。支持自适应书签递归分卷、物理页码保留、水印智能清洗与 SQLite FTS5 全文检索引擎。
+高性能 PDF 结构化转 Markdown 工具：专为超长技术手册、规范标准、规程文档及大模型 RAG 数据清洗设计。支持自适应书签递归分卷、物理页码保留、预训练 Markdown 二维表格对齐、水印智能清洗与 SQLite FTS5 全文检索引擎。
 
 ---
 
 ## Key Features / 核心特性
 
+- **Pre-trained 2D Table Alignment / 预训练 Markdown 二维表格对齐**：
+  Automatically detects 2D grid tables using vector geometry and formats them into standard GitHub Flavored Markdown (`| Col1 | Col2 |`), seamlessly interleaved with surrounding text paragraphs. Eliminates row-column drift and maximizes table QA and numerical reasoning accuracy for LLM Agents (GPT-4, Claude 3.5, Gemini 1.5, DeepSeek). Use `--no-tables` if you need plain linear text.
 - **Adaptive Bookmark Partitioning / 自适应书签递归分卷**：
   Automatically parses native PDF bookmark trees (TOC). If a section exceeds the threshold (default: 400 pages), it dynamically drills down into child bookmarks. For PDFs without bookmarks, it falls back to smooth chunking. 100% gapless, non-overlapping coverage from page 1 to the end.
 - **Physical Page Anchors / 物理页码高保真保留**：
@@ -76,6 +78,7 @@ pdf-to-markdown path/to/pdf_folder -o output_dir -w 8 --build-fts5
 | `--chunk-size` | Flag | `100` | Fallback chunk size (pages) for PDFs without bookmarks |
 | `--single-file` | Switch | `False` | Force output into a single `.md` file |
 | `--build-fts5` | Switch | `False` | Build SQLite FTS5 full-text search database |
+| `--no-tables` | Switch | `False` | Disable 2D table formatting and fallback to plain linear text |
 | `--watermark-regex` | Flag | `None` | Append custom regex pattern to scrub |
 
 ---

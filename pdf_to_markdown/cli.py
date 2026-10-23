@@ -21,6 +21,7 @@ def main():
     parser.add_argument("--chunk-size", type=int, default=100, help="Fallback chunk size in pages for PDFs without TOC (default: 100)")
     parser.add_argument("--single-file", action="store_true", help="Force output as a single unified Markdown file")
     parser.add_argument("--build-fts5", action="store_true", help="Build SQLite FTS5 full-text search database alongside Markdown")
+    parser.add_argument("--no-tables", action="store_false", dest="extract_tables", default=True, help="Disable 2D table extraction and fallback to plain linear text")
     parser.add_argument("--watermark-regex", type=str, action="append", help="Additional custom watermark regex to scrub")
 
     args = parser.parse_args()
@@ -37,6 +38,7 @@ def main():
             max_chapter_pages=args.max_chapter_pages,
             default_chunk_size=args.chunk_size,
             single_file=args.single_file,
+            extract_tables=args.extract_tables,
         )
         print(f"[✓] Converted successfully! Pages: {res['total_pages']}, Chars: {res['total_chars']}, Time: {res['elapsed_sec']}s")
     elif os.path.isdir(inp):
@@ -47,6 +49,7 @@ def main():
             build_fts5=args.build_fts5,
             max_chapter_pages=args.max_chapter_pages,
             custom_watermarks=args.watermark_regex,
+            extract_tables=args.extract_tables,
         )
     else:
         print(f"Error: input path does not exist: {inp}", file=sys.stderr)
